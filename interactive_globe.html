@@ -1,67 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Globe</title>
-    <style>
+
+
+
+    
+    
+    Interactive Globe
+    
         body { margin: 0; background-color: #000; }
         #globeViz { width: 100vw; height: 100vh; }
-    </style>
-</head>
-<body>
-    <div id="globeViz"></div>
-    <script src="https://unpkg.com/three/build/three.min.js"></script>
-    <script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script>
+    
+
+
+    
+    
+    
+    
+    
         let selected = null;
         const geoJsonUrl = 'https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson';
 
-        fetch(geoJsonUrl).then(res => res.json()).then(countries => {
-            // Precompute centroids for labels
-            countries.features.forEach(feat => {
-                const [lng, lat] = d3.geoCentroid(feat.geometry);
-                feat.properties.centroidLat = lat;
-                feat.properties.centroidLng = lng;
+<pre><code>    fetch(geoJsonUrl).then(res =&gt; res.json()).then(countries =&gt; {
+        // Precompute centroids for labels
+        countries.features.forEach(feat =&gt; {
+            const [lng, lat] = d3.geoCentroid(feat.geometry);
+            feat.properties.centroidLat = lat;
+            feat.properties.centroidLng = lng;
+        });
+
+        const world = Globe()
+            (document.getElementById(&#39;globeViz&#39;))
+            .globeImageUrl(&#39;https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg&#39;)
+            .backgroundImageUrl(&#39;https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/night-sky.png&#39;)
+            .polygonsData(countries.features)
+            .polygonCapColor(() =&gt; &#39;rgba(200, 200, 200, 0.2)&#39;)
+            .polygonSideColor(() =&gt; &#39;rgba(0, 0, 0, 0.1)&#39;)
+            .polygonStrokeColor(() =&gt; &#39;#fff&#39;)
+            .polygonAltitude(0.01)
+            .labelsData([])
+            .labelLat(d =&gt; d.properties.centroidLat)
+            .labelLng(d =&gt; d.properties.centroidLng)
+            .labelText(d =&gt; d.properties.NAME)
+            .labelSize(1.2)
+            .labelDotRadius(0.1)
+            .labelColor(() =&gt; &#39;white&#39;)
+            .labelResolution(2)
+            .onPolygonClick((polygon) =&gt; {
+                selected = (selected === polygon) ? null : polygon;
+                world
+                    .polygonAltitude(d =&gt; d === selected ? 0.05 : 0.01)
+                    .polygonCapColor(d =&gt; d === selected ? &#39;yellow&#39; : &#39;rgba(200, 200, 200, 0.2)&#39;)
+                    .labelsData(selected ? [polygon] : []);
             });
 
-            const world = Globe()
-                (document.getElementById('globeViz'))
-                .globeImageUrl('https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg')
-                .backgroundImageUrl('https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/night-sky.png')
-                .polygonsData(countries.features)
-                .polygonCapColor(() => 'rgba(200, 200, 200, 0.2)')
-                .polygonSideColor(() => 'rgba(0, 0, 0, 0.1)')
-                .polygonStrokeColor(() => '#fff')
-                .polygonAltitude(0.01)
-                .labelsData([])
-                .labelLat(d => d.properties.centroidLat)
-                .labelLng(d => d.properties.centroidLng)
-                .labelText(d => d.properties.NAME)
-                .labelSize(1.2)
-                .labelDotRadius(0.1)
-                .labelColor(() => 'white')
-                .labelResolution(2)
-                .onPolygonClick((polygon) => {
-                    selected = (selected === polygon) ? null : polygon;
-                    world
-                        .polygonAltitude(d => d === selected ? 0.05 : 0.01)
-                        .polygonCapColor(d => d === selected ? 'yellow' : 'rgba(200, 200, 200, 0.2)')
-                        .labelsData(selected ? [polygon] : []);
-                });
+        // Load typeface for labels
+        fetch(&#39;https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json&#39;)
+            .then(res =&gt; res.json())
+            .then(font =&gt; {
+                world.labelTypeFace(font);
+            });
 
-            // Load typeface for labels
-            fetch('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json')
-                .then(res => res.json())
-                .then(font => {
-                    world.labelTypeFace(font);
-                });
+        // Ensure no auto-rotation, enable drag
+        world.controls().autoRotate = false;
+        world.controls().enableZoom = true;
 
-            // Ensure no auto-rotation, enable drag
-            world.controls().autoRotate = false;
-            world.controls().enableZoom = true;
-        });
-    </script>
+        // Handle window resize for scaling and centering
+        const handleResize = () =&gt; {
+            world.width(window.innerWidth);
+            world.height(window.innerHeight);
+        };
+        window.addEventListener(&#39;resize&#39;, handleResize);
+        handleResize(); // Initial call to set size
+    });
+&lt;/script&gt;
+</code></pre>
 </body>
 </html>
